@@ -1,0 +1,44 @@
+# Template for using generic RDS Alarm
+- label: deploy-core-semiauto-cmx-cis-rds-alarms
+  type: create_stack
+  params:
+    template: rds-alarms.yaml
+    stack_name: "{{ core.Project }}-{{ core.App }}-rds-alarms"
+    parameters:
+      DBName: "DB"
+      TopicName: "db-alarms"
+      DBInstanceIdentifier: "cs-oracle"
+      RepoName: "CX"
+      AppName: "CS"
+      DBMemThreshold: 1932735283
+    accounts:
+      - "23432"  # nonprod-semiauto
+    regions:
+      - ap-southeast-1  # Asia Pacific (Singapore)
+      
+ - label: deploy-lbroute53-oldaws-route53-public
+  type: create_stack
+  params:
+    template: lbroute53-resources.yaml
+    stack_name: "{{ core.Project }}-{{ core.App }}-lbroute53-public"
+    accounts:
+      - "759387151437"  # nonprod-semiauto
+    regions:
+      - ap-southeast-1 # Asia Pacific (Singapore)
+      
+#vpc creation in frankfurt
+- label: deploy-core-semiauto-new-vpc-frankurt
+  type: create_stack
+  params:
+    template: frankfurt-vpc.yaml
+    stack_name: "{{ core.Project }}-{{ core.App }}-new-vpc"
+    parameters:
+      EnvironmentName: "poc"
+      VpcCIDR: "571.2128.1107.0/27"
+      PrivateSubnet1CIDR: "157.2128.1107.0/28"
+      PrivateSubnet2CIDR: "571.2218.1107.16/28"
+      KeyName: "abc-keypair"
+    accounts:
+      - "12321"  # NonProd-auto
+    regions:
+      - eu-central-1  # Eu Central (Frankfurt)
