@@ -1,0 +1,127 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Template for RDS Alarm and Notification Resources'
+
+Parameters:
+  DBName:
+    Description: DB Name
+    Type: String
+
+  TopicName:
+    Description: SNS Topic Name
+    Type: String
+
+  DBInstanceIdentifier:
+    Description: DB Instance Identifier
+    Type: String
+
+  DBCPUThreshold:
+    Description: DB CPU Threshold (80% if not specified)
+    Type: Number
+    Default: 80
+
+  DBMemThreshold:
+    Description: DB Memory Threshold (5GB Memory if not specified)
+    Type: Number
+    Default: 5368709120
+
+  DBConnThreshold:
+    Description: DB Connection Threshold (750 connections if not specified)
+    Type: Number
+    Default: 750
+
+  DBFreeSpaceThreshold:
+    Description: DB Free Space Threshold (25GB Free Space if not specified)
+    Type: Number
+    Default: 26843545600
+
+  RepoName:
+    Description: Alarm Name (Portfolio-App)
+    Type: String
+  
+  AppName:
+    Description: Alarm Description (Application Name)
+    Type: String
+
+Resources:
+  RdsCpuAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "CRITICAL=${RepoName}-${DBName}=Database-CPU-Utilisation"
+      AlarmDescription: !Sub ${AppName} database CPU utilization is over threshold. 
+      Namespace: AWS/RDS
+      MetricName: CPUUtilization
+      Unit: Percent
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: !Sub "${DBCPUThreshold}"
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Sub "${DBInstanceIdentifier}"
+      AlarmActions:
+        - !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${TopicName}"
+      InsufficientDataActions:
+        - !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${TopicName}"
+
+  RdsMemoryAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "CRITICAL=${RepoName}-${DBName}=Database-Memory-Utilisation"
+      AlarmDescription: !Sub "${AppName} database freeable memory is under ${DBMemThreshold}."
+      Namespace: AWS/RDS
+      MetricName: FreeableMemory
+      Unit: Bytes
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: !Sub "${DBMemThreshold}"
+      ComparisonOperator: LessThanOrEqualToThreshold
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Sub "${DBInstanceIdentifier}"
+      AlarmActions:
+        - !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${TopicName}"
+      InsufficientDataActions:
+        - !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${TopicName}"
+
+  RdsConnectionsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "CRITICAL=${RepoName}-${DBName}=Database-Connection-Utilisation"
+      AlarmDescription: !Sub "${AppName} database Connections are over ${DBConnThreshold}."
+      Namespace: AWS/RDS
+      MetricName: DatabaseConnections
+      Unit: Count
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: !Sub "${DBConnThreshold}"
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Sub "${DBInstanceIdentifier}"
+      AlarmActions:
+        - !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${TopicName}"
+
+  RdsFreeSpaceAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "CRITICAL=${RepoName}-${DBName}=Database-Disk-Space"
+      AlarmDescription: !Sub "${AppName} database free storage is under ${DBFreeSpaceThreshold}bytes."
+      Namespace: AWS/RDS
+      MetricName: FreeStorageSpace
+      Unit: Bytes
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: !Sub "${DBFreeSpaceThreshold}"
+      ComparisonOperator: LessThanOrEqualToThreshold
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Sub "${DBInstanceIdentifier}"
+      AlarmActions:
+        - !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${TopicName}"
+
+
