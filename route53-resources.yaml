@@ -1,0 +1,135 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: MAP CNAME so that it can be refer by old AWS account
+
+Mappings:
+
+  '1232': # nonprod-semiauto
+    ap-southeast-1:
+      Branch: ''
+      ocplb: internal-ocp-nonprod-infra-elb-1232.ap-southeast-1.elb.amazonaws.com
+      cislb: internal-cmx-cis-c-LoadBala-MV05QXVAAJPI-1232.ap-southeast-1.elb.amazonaws.com
+
+Conditions:
+
+  SemiAutoAccount:
+    Fn::Or:
+      - Fn::Equals: [ Ref: 'AWS::AccountId', '1232' ]
+      - Fn::Equals: [ Ref: 'AWS::AccountId', '12321' ]
+
+  AutoAccount:
+    Fn::Or:
+      - Fn::Equals: [ Ref: 'AWS::AccountId', '1232' ]
+      - Fn::Equals: [ Ref: 'AWS::AccountId', '2341' ]
+
+  NonProdAutoAccount:
+    Fn::Equals: [ Ref: 'AWS::AccountId', '132' ]
+
+Resources:
+
+  # HostedZoneName = auto.prod.abc.com or auto.nonprod.abc.com
+
+  LSCSLBreleaseDns:
+    Type: AWS::Route53::RecordSet
+    Condition: AutoAccount
+    Description: 'Nice DNS name for LSCS release DNS for old AWS account to refer to'
+    Properties:
+      HostedZoneName:
+        Fn::ImportValue: core-network:PublicOnlyRootHostedZoneName
+      Name:
+        # The 'nice' dns name.
+        Fn::Join: [ '.', [ 'lscslb', { 'Fn::ImportValue': 'core-network:PublicOnlyRootHostedZoneName' } ]]
+      Type: CNAME
+      TTL: '60'
+      ResourceRecords:
+        - { 'Fn::FindInMap': [ Ref: 'AWS::AccountId', Ref: 'AWS::Region', lscslb] }
+
+  CSLSVCreleaseDns:
+    Type: AWS::Route53::RecordSet
+    Condition: ProdAutoAccount
+    Description: 'Nice DNS name for CSL service GTM GLB release DNS for old AWS account to refer to'
+    Properties:
+      HostedZoneName:
+        Fn::ImportValue: core-network:PublicOnlyRootHostedZoneName
+      Name:
+        # The 'nice' dns name.
+        Fn::Join: [ '.', [ 'cslsvc', { 'Fn::ImportValue': 'core-network:PublicOnlyRootHostedZoneName' } ]]
+      Type: CNAME
+      TTL: '60'
+      ResourceRecords:
+        - { 'Fn::FindInMap': [ Ref: 'AWS::AccountId', Ref: 'AWS::Region', cslsvc] }
+
+  CSLBKGreleaseDns:
+    Type: AWS::Route53::RecordSet
+    Condition: ProdAutoAccount
+    Description: 'Nice DNS name for CSL service GTM GLB release DNS for old AWS account to refer to'
+    Properties:
+      HostedZoneName:
+        Fn::ImportValue: core-network:PublicOnlyRootHostedZoneName
+      Name:
+        # The 'nice' dns name.
+        Fn::Join: [ '.', [ 'cslbkg', { 'Fn::ImportValue': 'core-network:PublicOnlyRootHostedZoneName' } ]]
+      Type: CNAME
+      TTL: '60'
+      ResourceRecords:
+        - { 'Fn::FindInMap': [ Ref: 'AWS::AccountId', Ref: 'AWS::Region', cslbkg] }
+
+  OCPnonprodolddevDns:
+    Type: AWS::Route53::RecordSet
+    Condition: NonProdSemiAutoAccount
+    Description: 'DNS for OCP load balancer in nonprod semiauto'
+    Properties:
+      HostedZoneName:
+        Fn::ImportValue: core-network:PublicOnlyRootHostedZoneName
+      Name:
+        # The 'nice' dns name.
+        Fn::Join: [ '.', [ 'ocplb', { 'Fn::ImportValue': 'core-network:PublicOnlyRootHostedZoneName' } ]]
+      Type: CNAME
+      TTL: '60'
+      ResourceRecords:
+        - { 'Fn::FindInMap': [ Ref: 'AWS::AccountId', Ref: 'AWS::Region', ocplb] }
+
+  CISreleaseDns:
+    Type: AWS::Route53::RecordSet
+    Condition: SemiAutoAccount
+    Description: 'Nice DNS name for CIS LB for old AWS account to refer to'
+    Properties:
+      HostedZoneName:
+        Fn::ImportValue: core-network:PublicOnlyRootHostedZoneName
+      Name:
+        # The 'nice' dns name.
+        Fn::Join: [ '.', [ 'cislb', { 'Fn::ImportValue': 'core-network:PublicOnlyRootHostedZoneName' } ]]
+      Type: CNAME
+      TTL: '60'
+      ResourceRecords:
+        - { 'Fn::FindInMap': [ Ref: 'AWS::AccountId', Ref: 'AWS::Region', cislb] }
+
+  MobileMaintreleaseDns:
+    Type: AWS::Route53::RecordSet
+    Condition: NonProdAutoAccount
+    Description: 'Nice DNS name for Mobile Maint Page'
+    Properties:
+      HostedZoneName:
+        Fn::ImportValue: core-network:PublicOnlyRootHostedZoneName
+      Name:
+        # The 'nice' dns name.
+        Fn::Join: [ '.', [ 'web.saamobile.sin', { 'Fn::ImportValue': 'core-network:PublicOnlyRootHostedZoneName' } ]]
+      Type: CNAME
+      TTL: '60'
+      ResourceRecords:
+        - { 'Fn::FindInMap': [ Ref: 'AWS::AccountId', Ref: 'AWS::Region', mobilemaint] }
+
+  RtWebreleaseDns:
+    Type: AWS::Route53::RecordSet
+    Condition: NonProdAutoAccount
+    Description: 'Nice DNS name for NCP-RTWEB nonprod static website'
+    Properties:
+      HostedZoneName:
+        Fn::ImportValue: core-network:PublicOnlyRootHostedZoneName
+      Name:
+        # The 'nice' dns name.
+        Fn::Join: [ '.', [ 'rt', { 'Fn::ImportValue': 'core-network:PublicOnlyRootHostedZoneName' } ]]
+      Type: CNAME
+      TTL: '60'
+      ResourceRecords:
+        - { 'Fn::FindInMap': [ Ref: 'AWS::AccountId', Ref: 'AWS::Region', rtweb] }
